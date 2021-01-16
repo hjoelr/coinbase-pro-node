@@ -183,6 +183,19 @@ export interface WebSocketTickerMessage {
   volume_30d: string;
 }
 
+export interface WebSocketL2SnapshotMessage {
+  type: WebSocketResponseType.LEVEL2_SNAPSHOT;
+  product_id: string;
+  bids: [[string, string]];
+  asks: [[string, string]];
+}
+
+export interface WebSocketL2UpdateMessage {
+  type: WebSocketResponseType.LEVEL2_UPDATE;
+  product_id: string;
+  changes: [[string, string, string]];
+}
+
 export type WebSocketLastMatchMessage = Omit<WebSocketMatchMessage, 'type'> & {type: WebSocketResponseType.LAST_MATCH};
 
 export interface WebSocketSubscription {
@@ -198,6 +211,8 @@ export enum WebSocketEvent {
   ON_MESSAGE_MATCHES = 'WebSocketEvent.ON_MESSAGE_MATCHES',
   ON_MESSAGE_STATUS = 'WebSocketEvent.ON_MESSAGE_STATUS',
   ON_MESSAGE_TICKER = 'WebSocketEvent.ON_MESSAGE_TICKER',
+  ON_MESSAGE_L2SNAPSHOT = 'WebSocketEvent.ON_MESSAGE_L2SNAPSHOT',
+  ON_MESSAGE_L2UPDATE = 'WebSocketEvent.ON_MESSAGE_L2UPDATE',
   ON_OPEN = 'WebSocketEvent.ON_OPEN',
   ON_SUBSCRIPTION_UPDATE = 'WebSocketEvent.ON_SUBSCRIPTION_UPDATE',
 }
@@ -221,6 +236,10 @@ export interface WebSocketClient {
   on(event: WebSocketEvent.ON_MESSAGE_TICKER, listener: (tickerMessage: WebSocketTickerMessage) => void): this;
 
   on(event: WebSocketEvent.ON_SUBSCRIPTION_UPDATE, listener: (subscriptions: WebSocketSubscription) => void): this;
+
+  on(event: WebSocketEvent.ON_MESSAGE_L2SNAPSHOT, listener: (subscriptions: WebSocketL2SnapshotMessage) => void): this;
+
+  on(event: WebSocketEvent.ON_MESSAGE_L2UPDATE, listener: (subscriptions: WebSocketL2UpdateMessage) => void): this;
 
   on(event: WebSocketEvent.ON_OPEN, listener: (event: Event) => void): this;
 }
@@ -300,6 +319,12 @@ export class WebSocketClient extends EventEmitter {
         case WebSocketResponseType.FULL_MATCH:
         case WebSocketResponseType.LAST_MATCH:
           this.emit(WebSocketEvent.ON_MESSAGE_MATCHES, response);
+          break;
+        case WebSocketResponseType.LEVEL2_SNAPSHOT:
+          this.emit(WebSocketEvent.ON_MESSAGE_L2SNAPSHOT, response);
+          break;
+        case WebSocketResponseType.LEVEL2_UPDATE:
+          this.emit(WebSocketEvent.ON_MESSAGE_L2UPDATE, response);
           break;
       }
     };
